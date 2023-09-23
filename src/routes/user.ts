@@ -46,8 +46,6 @@ userRouter.post("/login", async (req: Request, res: Response) => {
       return res.status(400).json(error);
     }
 
-    console.log(value);
-
     const data = await UserService.login({
       email: value.email,
       password: value.password,
@@ -69,7 +67,6 @@ userRouter.post("/register", async (req: Request, res: Response) => {
     name: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
-    remember_token: Joi.string().required(),
   });
 
   const { error } = schema.validate(req.body);
@@ -79,10 +76,8 @@ userRouter.post("/register", async (req: Request, res: Response) => {
 
   try {
     const user = req.body;
-    // hash pass
-    user.password = await Bun.password.hash(user.password);
-
     const newUser = await UserService.createUser(user);
+
     return res.status(201).json(newUser);
   } catch (error: any) {
     return res.status(500).json(error.message);
