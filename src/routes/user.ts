@@ -1,5 +1,4 @@
 import express from "express";
-import type { Request, Response } from "express";
 import Joi from "joi";
 
 import * as UserService from "../services/user";
@@ -7,9 +6,9 @@ import * as UserService from "../services/user";
 export const userRouter = express.Router();
 
 // GET users list
-userRouter.get("/", async (req: Request, res: Response) => {
+userRouter.get("/", async (req: express.Request, res: express.Response) => {
   try {
-    const users = await UserService.listUsers();
+    const users = await UserService.listUsers(req);
     return res.status(200).json(users);
   } catch (error: any) {
     return res.status(500).json(error.message);
@@ -17,8 +16,7 @@ userRouter.get("/", async (req: Request, res: Response) => {
 });
 
 // GET a user by ID
-
-userRouter.get("/:id", async (req: Request, res: Response) => {
+userRouter.get("/:id", async (req: express.Request, res: express.Response) => {
   const id: number = parseInt(req.params.id, 10);
 
   try {
@@ -33,59 +31,63 @@ userRouter.get("/:id", async (req: Request, res: Response) => {
 });
 
 // USER LOGIN
-userRouter.post("/login", async (req: Request, res: Response) => {
-  try {
+userRouter.post(
+  "/login",
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const schema = Joi.object({
+        email: Joi.string().email().required(),
+        password: Joi.string().required(),
+      });
+
+      const { error, value } = schema.validate(req.body);
+
+      if (error) {
+        return res.status(400).json(error);
+      }
+
+      const data = await UserService.login({
+        email: value.email,
+        password: value.password,
+      });
+
+      return res.status(200).json({
+        ...data,
+      });
+    } catch (error: any) {
+      return res.status(500).json(error.message);
+    }
+  }
+);
+
+// POST: Create User
+userRouter.post(
+  "/register",
+  async (req: express.Request, res: express.Response) => {
     const schema = Joi.object({
+      name: Joi.string().required(),
       email: Joi.string().email().required(),
       password: Joi.string().required(),
     });
 
-    const { error, value } = schema.validate(req.body);
-
+    const { error } = schema.validate(req.body);
     if (error) {
       return res.status(400).json(error);
     }
 
-    const data = await UserService.login({
-      email: value.email,
-      password: value.password,
-    });
+    try {
+      const user = req.body;
+      const newUser = await UserService.createUser(user);
 
-    // res.status(200).json("access-token", data.token);
-
-    return res.status(200).json({
-      ...data,
-    });
-  } catch (error: any) {
-    return res.status(500).json(error.message);
+      return res.status(201).json(newUser);
+    } catch (error: any) {
+      return res.status(500).json(error.message);
+    }
   }
-});
-
-// POST: Create User
-userRouter.post("/register", async (req: Request, res: Response) => {
-  const schema = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  });
-
-  const { error } = schema.validate(req.body);
-  if (error) {
-    return res.status(400).json(error);
-  }
-
-  try {
-    const user = req.body;
-    const newUser = await UserService.createUser(user);
-
-    return res.status(201).json(newUser);
-  } catch (error: any) {
-    return res.status(500).json(error.message);
-  }
-});
+);
 
 // UPDATE a user
-userRouter.put("/:id", async (req: Request, res: Response) => {
+userRouter.put("/:id", async (req: express.Request, res: express.Response) => {
   const id: number = parseInt(req.params.id, 10);
 
   const schema = Joi.object({

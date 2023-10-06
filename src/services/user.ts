@@ -1,3 +1,4 @@
+import express from "express";
 import { db } from "../utils/db.server";
 import { sign, verify } from "jsonwebtoken";
 
@@ -13,12 +14,22 @@ type User = {
   password: string;
 };
 
-export const listUsers = async (): Promise<{
+export const listUsers = async (
+  req: express.Request
+): Promise<{
   users: User[];
   total: number;
 }> => {
+  const { page, limit } = req.query as {
+    page: string;
+    limit: string;
+  };
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
   const users = await db.users.findMany({
-    take: 5,
+    take: parseInt(limit),
+    skip: offset,
     select: {
       name: true,
       email: true,
@@ -81,6 +92,16 @@ export const createUser = async (user: Omit<User, "id">): Promise<User> => {
   user.password = await Bun.password.hash(user.password);
 
   const { name, email, password } = user;
+
+  const isEmailExist = await db.users.findFirst({
+    where: {
+      email,
+    },
+  });
+
+  if (isEmailExist) {
+    throw new Error(`User with email ${email} existed`);
+  }
 
   return db.users.create({
     data: {
