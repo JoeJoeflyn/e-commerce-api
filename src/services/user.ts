@@ -1,26 +1,51 @@
+import express from "express";
 import { db } from "../utils/db.server";
-import { createTokens } from "../jwt";
-import { log } from "console";
+import { sign, verify } from "jsonwebtoken";
+
+export const createTokens = (email: string) => {
+  const accessToken = sign({ email: email }, process.env.SECRET_KEY as string);
+
+  return accessToken;
+};
 
 type User = {
   name: string;
   email: string;
   password: string;
-  remember_token: string;
 };
 
-export const listUsers = async (): Promise<User[]> => {
-  return db.users.findMany({
+export const listUsers = async (
+  req: express.Request
+): Promise<{
+  users: User[];
+  total: number;
+}> => {
+  const { page, limit } = req.query as {
+    page: string;
+    limit: string;
+  };
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const users = await db.users.findMany({
+    take: parseInt(limit),
+    skip: offset,
     select: {
       name: true,
       email: true,
       password: true,
-      remember_token: true,
     },
   });
+
+  return {
+    total: users.length,
+    users,
+  };
 };
 
-export const getUser = async (id: number): Promise<User | null> => {
+export const getUser = async (
+  id: number
+): Promise<{ name: string; email: string } | null> => {
   return db.users.findUnique({
     where: {
       id,
@@ -28,8 +53,6 @@ export const getUser = async (id: number): Promise<User | null> => {
     select: {
       name: true,
       email: true,
-      password: true,
-      remember_token: true,
     },
   });
 };
@@ -47,12 +70,10 @@ export const login = async ({
     },
   });
 
-  //TODO check user do not exist => return http error + message
   if (!user) {
     throw new Error("User does not exist");
   }
 
-  //TODO compare password => do not match => return http error + message
   const isMatch = await Bun.password.verify(password, user.password);
   if (!isMatch) {
     throw new Error("Password does not correct");
@@ -61,27 +82,38 @@ export const login = async ({
   const token = createTokens(user.email);
 
   return {
-    user, // loi nay la do user khi query ra co the bi null => o dong 49 check user ton tai hay ko se fix ddc
+    user,
     token,
   };
 };
 
 export const createUser = async (user: Omit<User, "id">): Promise<User> => {
-  const { name, email, password, remember_token } = user;
+  // hash pass
+  user.password = await Bun.password.hash(user.password);
+
+  const { name, email, password } = user;
+
+  const isEmailExist = await db.users.findFirst({
+    where: {
+      email,
+    },
+  });
+
+  if (isEmailExist) {
+    throw new Error(`User with email ${email} existed`);
+  }
 
   return db.users.create({
     data: {
       name,
       email,
       password,
-      remember_token,
     },
     select: {
       id: true,
       name: true,
       email: true,
       password: true,
-      remember_token: true,
     },
   });
 };
@@ -91,6 +123,16 @@ export const updateUser = async (
   id: number
 ): Promise<User> => {
   const { name, email, password } = user;
+
+  const isEmailExist = await db.users.findFirst({
+    where: {
+      email,
+    },
+  });
+
+  if (isEmailExist) {
+    throw new Error("Email must be unique");
+  }
 
   return db.users.update({
     where: {
@@ -106,7 +148,6 @@ export const updateUser = async (
       name: true,
       email: true,
       password: true,
-      remember_token: true,
     },
   });
 };
