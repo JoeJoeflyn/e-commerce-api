@@ -8,7 +8,7 @@ export const userRouter = express.Router();
 // GET users list
 userRouter.get("/", async (req: express.Request, res: express.Response) => {
   try {
-    const users = await UserService.listUsers(req);
+    const users = await UserService.listUser(req);
     return res.status(200).json(users);
   } catch (error: any) {
     return res.status(500).json(error.message);
@@ -43,7 +43,7 @@ userRouter.post(
       const { error, value } = schema.validate(req.body);
 
       if (error) {
-        return res.status(400).json(error);
+        return res.status(400).json({ error });
       }
 
       const data = await UserService.login({
@@ -55,7 +55,7 @@ userRouter.post(
         ...data,
       });
     } catch (error: any) {
-      return res.status(500).json(error.message);
+      return res.status(500).json({ error: error?.message || "Server error" });
     }
   }
 );
@@ -72,16 +72,15 @@ userRouter.post(
 
     const { error } = schema.validate(req.body);
     if (error) {
-      return res.status(400).json(error);
+      return res.status(400).json({ error });
     }
 
     try {
       const user = req.body;
       const newUser = await UserService.createUser(user);
-
       return res.status(201).json(newUser);
     } catch (error: any) {
-      return res.status(500).json(error.message);
+      return res.status(500).json({ error: error?.message || "Server error" });
     }
   }
 );
@@ -95,11 +94,11 @@ userRouter.put("/:id", async (req: express.Request, res: express.Response) => {
     email: Joi.string().email(),
     password: Joi.string(),
     remember_token: Joi.string(),
-  }).options({ abortEarly: false });
+  });
 
   const { error } = schema.validate(req.body);
   if (error) {
-    return res.status(400).json(error);
+    return res.status(400).json({ error });
   }
 
   try {
@@ -107,6 +106,6 @@ userRouter.put("/:id", async (req: express.Request, res: express.Response) => {
     const updateUser = await UserService.updateUser(user, id);
     return res.status(201).json(updateUser);
   } catch (error: any) {
-    return res.status(500).json(error.message);
+    return res.status(500).json({ error: error?.message || "Server error" });
   }
 });

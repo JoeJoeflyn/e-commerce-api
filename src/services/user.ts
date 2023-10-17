@@ -14,7 +14,7 @@ type User = {
   password: string;
 };
 
-export const listUsers = async (
+export const listUser = async (
   req: express.Request
 ): Promise<{
   users: User[];
@@ -27,7 +27,7 @@ export const listUsers = async (
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  const users = await db.users.findMany({
+  const users = await db.user.findMany({
     take: parseInt(limit),
     skip: offset,
     select: {
@@ -46,7 +46,7 @@ export const listUsers = async (
 export const getUser = async (
   id: number
 ): Promise<{ name: string; email: string } | null> => {
-  return db.users.findUnique({
+  return db.user.findUnique({
     where: {
       id,
     },
@@ -64,7 +64,7 @@ export const login = async ({
   email: string;
   password: string;
 }): Promise<{ user: User; token: string }> => {
-  const user = await db.users.findFirst({
+  const user = await db.user.findFirst({
     where: {
       email,
     },
@@ -75,6 +75,7 @@ export const login = async ({
   }
 
   const isMatch = await Bun.password.verify(password, user.password);
+
   if (!isMatch) {
     throw new Error("Password does not correct");
   }
@@ -87,13 +88,15 @@ export const login = async ({
   };
 };
 
-export const createUser = async (user: Omit<User, "id">): Promise<User> => {
+export const createUser = async (
+  user: Omit<User, "id">
+): Promise<{ newUser: { name: string; email: string } }> => {
   // hash pass
   user.password = await Bun.password.hash(user.password);
 
   const { name, email, password } = user;
 
-  const isEmailExist = await db.users.findFirst({
+  const isEmailExist = await db.user.findFirst({
     where: {
       email,
     },
@@ -103,19 +106,20 @@ export const createUser = async (user: Omit<User, "id">): Promise<User> => {
     throw new Error(`User with email ${email} existed`);
   }
 
-  return db.users.create({
+  const newUser = await db.user.create({
     data: {
       name,
       email,
       password,
     },
     select: {
-      id: true,
       name: true,
       email: true,
-      password: true,
     },
   });
+  return {
+    newUser,
+  };
 };
 
 export const updateUser = async (
@@ -124,7 +128,7 @@ export const updateUser = async (
 ): Promise<User> => {
   const { name, email, password } = user;
 
-  const isEmailExist = await db.users.findFirst({
+  const isEmailExist = await db.user.findFirst({
     where: {
       email,
     },
@@ -134,7 +138,7 @@ export const updateUser = async (
     throw new Error("Email must be unique");
   }
 
-  return db.users.update({
+  return db.user.update({
     where: {
       id,
     },
@@ -153,7 +157,7 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (id: number): Promise<void> => {
-  await db.users.delete({
+  await db.user.delete({
     where: {
       id,
     },
