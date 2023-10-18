@@ -2,35 +2,60 @@ import express from "express";
 import Joi from "joi";
 
 import * as ProductService from "../services/product";
+import * as ImageService from "../services/productImages";
+import { upload, uploadMemoryStorage } from "../store";
 
 export const productRouter = express.Router();
 
+// Post thi mac dinh la create r ko can them createproduct lam gi
+productRouter.post("/", async (req: express.Request, res: express.Response) => {
+  const schema = Joi.object({
+    category_id: Joi.number().required(),
+    name: Joi.string().required(),
+    description: Joi.string().required(),
+    price: Joi.number().required(),
+    discount_price: Joi.number().required(),
+    quantity: Joi.number().required(),
+    contact: Joi.string().required(),
+    location: Joi.string().required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error });
+  }
+
+  try {
+    const product = req.body;
+    const newProduct = await ProductService.addProduct(product);
+    return res.status(201).json(newProduct);
+  } catch (error: any) {
+    return res.status(500).json({ error: error?.message || "Server error" });
+  }
+});
+// add imgs.
 productRouter.post(
-  "/addproduct",
+  "/addimage",
+  upload.single("productImage"),
   async (req: express.Request, res: express.Response) => {
-    const schema = Joi.object({
-      category_id: Joi.number().required(),
-      name: Joi.string().required(),
-      description: Joi.string().required(),
-      price: Joi.number().required(),
-      discount_price: Joi.number().required(),
-      quantity: Joi.number().required(),
-      contact: Joi.string().required(),
-      location: Joi.string().required(),
-    });
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    console.log(">>>>>>>>>>>>>>>>", req.file);
+    // if (!req.file) {
+    //   return res.status(400).json({ error: "No file uploaded" });
+    // }
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ error });
-    }
-
-    try {
-      const product = req.body;
-      const newProduct = await ProductService.addProduct(product);
-      return res.status(201).json(newProduct);
-    } catch (error: any) {
-      return res.status(500).json({ error: error?.message || "Server error" });
-    }
+    // try {
+    //   return res.json({
+    //     filename: req.file.originalname,
+    //     fileSize: req.file.size,
+    //     mimetype: req.file.mimetype,
+    //   });
+    //   // const img = req.body;
+    //   // const newImage = await ImageService.addImageProduct(img);
+    //   // return res.status(201).json(newImage);
+    // } catch (error: any) {
+    //   return res.status(500).json({ error: error?.message || "Server error" });
+    // }
   }
 );
 
