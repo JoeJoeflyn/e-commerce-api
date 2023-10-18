@@ -36,26 +36,26 @@ productRouter.post("/", async (req: express.Request, res: express.Response) => {
 // add imgs.
 productRouter.post(
   "/addimage",
-  upload.single("productImage"),
+  uploadMemoryStorage.single("image"),
   async (req: express.Request, res: express.Response) => {
     console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     console.log(">>>>>>>>>>>>>>>>", req.file);
-    // if (!req.file) {
-    //   return res.status(400).json({ error: "No file uploaded" });
-    // }
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-    // try {
-    //   return res.json({
-    //     filename: req.file.originalname,
-    //     fileSize: req.file.size,
-    //     mimetype: req.file.mimetype,
-    //   });
-    //   // const img = req.body;
-    //   // const newImage = await ImageService.addImageProduct(img);
-    //   // return res.status(201).json(newImage);
-    // } catch (error: any) {
-    //   return res.status(500).json({ error: error?.message || "Server error" });
-    // }
+    try {
+      return res.json({
+        filename: req.file.originalname,
+        fileSize: req.file.size,
+        mimetype: req.file.mimetype,
+      });
+      // const img = req.body;
+      // const newImage = await ImageService.addImageProduct(img);
+      // return res.status(201).json(newImage);
+    } catch (error: any) {
+      return res.status(500).json({ error: error?.message || "Server error" });
+    }
   }
 );
 
