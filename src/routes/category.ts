@@ -6,7 +6,7 @@ import * as CategoryService from "../services/category";
 export const categoryRouter = express.Router();
 
 categoryRouter.post(
-  "/addcategory",
+  "/",
   async (req: express.Request, res: express.Response) => {
     const schema = Joi.object({
       name: Joi.string().required(),

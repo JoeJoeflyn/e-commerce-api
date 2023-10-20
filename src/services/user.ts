@@ -1,6 +1,7 @@
 import express from "express";
 import { db } from "../utils/db.server";
 import { sign, verify } from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 export const createTokens = (email: string) => {
   const accessToken = sign({ email: email }, process.env.SECRET_KEY as string);
@@ -17,8 +18,8 @@ type User = {
 export const listUser = async (
   req: express.Request
 ): Promise<{
-  users: User[];
   total: number;
+  users: User[];
 }> => {
   const { page, limit } = req.query as {
     page: string;
@@ -37,8 +38,10 @@ export const listUser = async (
     },
   });
 
+  const total = await db.user.count();
+
   return {
-    total: users.length,
+    total,
     users,
   };
 };
@@ -74,7 +77,7 @@ export const login = async ({
     throw new Error("User does not exist");
   }
 
-  const isMatch = await Bun.password.verify(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
     throw new Error("Password does not correct");
@@ -92,7 +95,7 @@ export const createUser = async (
   user: Omit<User, "id">
 ): Promise<{ newUser: { name: string; email: string } }> => {
   // hash pass
-  user.password = await Bun.password.hash(user.password);
+  user.password = await bcrypt.hash(user.password, 10);
 
   const { name, email, password } = user;
 

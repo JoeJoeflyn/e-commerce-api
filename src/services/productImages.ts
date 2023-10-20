@@ -1,6 +1,9 @@
-import express from "express";
+import fs from "fs";
 import { db } from "../utils/db.server";
 import { v2 as cloudinary } from "cloudinary";
+
+import path from "path";
+import { GetBatchResult } from "@prisma/client/runtime/library";
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -15,26 +18,40 @@ type Image = {
 };
 
 export const addImageProduct = async (
-  image: Omit<Image, "id">
-): Promise<{ images: Image }> => {
-  console.log(image);
+  images: Express.Multer.File[],
+  productId: number
+): Promise<{
+  imagesAdded: GetBatchResult;
+}> => {
+  const promises = [];
 
-  const { product_id, name, size } = image;
+  for (let i = 0; i < images.length; i++) {
+    const uploadedImages = await cloudinary.uploader.upload(images[i].path, {
+      public_id: path.parse(images[i].originalname).name,
+      resource_type: "image",
+    });
+    // pushing promise to array for promise.all
+    promises.push(uploadedImages);
+    // deleting img in uploads folder
+    fs.unlinkSync(images[i].path);
+  }
 
-  const uploadedImage = await cloudinary.uploader.upload(name);
-  const images = await db.productImage.create({
-    data: {
-      product_id,
-      name: uploadedImage.secure_url,
-      size,
-    },
-    select: {
-      product_id: true,
-      name: true,
-      size: true,
-    },
+  const imagesInfo = await Promise.all(promises);
+  // mapping to get array(name,size,product_id) result for creating data
+  const imgsData = imagesInfo.map((img) => {
+    return {
+      product_id: productId,
+      name: img.secure_url,
+      size: img.bytes,
+    };
   });
+  // using createmany func to create data
+  const imagesAdded = await db.productImage.createMany({
+    data: imgsData,
+    skipDuplicates: false,
+  });
+
   return {
-    images,
+    imagesAdded,
   };
 };

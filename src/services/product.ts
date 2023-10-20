@@ -81,8 +81,10 @@ export const listProduct = async (
     },
   });
 
+  const total = await db.product.count();
+
   return {
-    total: products.length,
+    total,
     products,
   };
 };

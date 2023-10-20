@@ -7,7 +7,6 @@ import { upload, uploadMemoryStorage } from "../store";
 
 export const productRouter = express.Router();
 
-// Post thi mac dinh la create r ko can them createproduct lam gi
 productRouter.post("/", async (req: express.Request, res: express.Response) => {
   const schema = Joi.object({
     category_id: Joi.number().required(),
@@ -36,23 +35,17 @@ productRouter.post("/", async (req: express.Request, res: express.Response) => {
 // add imgs.
 productRouter.post(
   "/addimage",
-  uploadMemoryStorage.single("image"),
+  upload.any(),
   async (req: express.Request, res: express.Response) => {
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    console.log(">>>>>>>>>>>>>>>>", req.file);
-    if (!req.file) {
+    if (!req.files) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
     try {
-      return res.json({
-        filename: req.file.originalname,
-        fileSize: req.file.size,
-        mimetype: req.file.mimetype,
-      });
-      // const img = req.body;
-      // const newImage = await ImageService.addImageProduct(img);
-      // return res.status(201).json(newImage);
+      const images = req.files as Express.Multer.File[];
+      const productId = parseInt(req.body?.productId);
+      const newImage = await ImageService.addImageProduct(images, productId);
+      return res.status(201).json(newImage);
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || "Server error" });
     }
