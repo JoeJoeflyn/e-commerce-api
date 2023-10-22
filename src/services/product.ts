@@ -2,11 +2,11 @@ import express from "express";
 import { db } from "../utils/db.server";
 
 type Product = {
-  category_id: number;
+  categoryId: number;
   name: string;
   description: string;
   price: number;
-  discount_price: number;
+  discountPrice: number;
   quantity: number;
   contact: string;
   location: string;
@@ -14,13 +14,24 @@ type Product = {
 
 export const addProduct = async (
   product: Omit<Product, "id">
-): Promise<{ newProduct: Product }> => {
+): Promise<{
+  newProduct: {
+    category_id: number;
+    name: string;
+    description: string;
+    price: number;
+    discount_price: number;
+    quantity: number;
+    contact: string;
+    location: string;
+  };
+}> => {
   const {
-    category_id,
+    categoryId,
     name,
     description,
     price,
-    discount_price,
+    discountPrice,
     quantity,
     contact,
     location,
@@ -28,11 +39,11 @@ export const addProduct = async (
 
   const newProduct = await db.product.create({
     data: {
-      category_id,
+      category_id: categoryId,
       name,
       description,
       price,
-      discount_price,
+      discount_price: discountPrice,
       quantity,
       contact,
       location,
@@ -56,7 +67,16 @@ export const addProduct = async (
 export const listProduct = async (
   req: express.Request
 ): Promise<{
-  products: Product[];
+  products: {
+    category_id: number;
+    name: string;
+    description: string;
+    price: number;
+    discount_price: number;
+    quantity: number;
+    contact: string;
+    location: string;
+  }[];
   total: number;
 }> => {
   const { page, limit } = req.query as {
@@ -64,20 +84,14 @@ export const listProduct = async (
     limit: string;
   };
 
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const offset = (+page - 1) * +limit;
 
   const products = await db.product.findMany({
-    take: parseInt(limit),
+    take: +limit,
     skip: offset,
-    select: {
-      category_id: true,
-      name: true,
-      description: true,
-      price: true,
-      discount_price: true,
-      quantity: true,
-      contact: true,
-      location: true,
+    include: {
+      category: true,
+      product_images: true,
     },
   });
 
@@ -91,7 +105,18 @@ export const listProduct = async (
 
 export const getProduct = async (
   id: number
-): Promise<{ getProduct: Product | null }> => {
+): Promise<{
+  getProduct: {
+    category_id: number;
+    name: string;
+    description: string;
+    price: number;
+    discount_price: number;
+    quantity: number;
+    contact: string;
+    location: string;
+  } | null;
+}> => {
   const getProduct = await db.product.findUnique({
     where: {
       id,
@@ -115,13 +140,22 @@ export const getProduct = async (
 export const updateProduct = async (
   product: Omit<Product, "id">,
   id: number
-): Promise<Product> => {
+): Promise<{
+  category_id: number;
+  name: string;
+  description: string;
+  price: number;
+  discount_price: number;
+  quantity: number;
+  contact: string;
+  location: string;
+}> => {
   const {
-    category_id,
+    categoryId,
     name,
     description,
     price,
-    discount_price,
+    discountPrice,
     quantity,
     contact,
     location,
@@ -132,11 +166,11 @@ export const updateProduct = async (
       id,
     },
     data: {
-      category_id,
+      category_id: categoryId,
       name,
       description,
       price,
-      discount_price,
+      discount_price: discountPrice,
       quantity,
       contact,
       location,

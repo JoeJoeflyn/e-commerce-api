@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "darwin-arm64"]
 }
 
@@ -23,7 +23,7 @@ model User {
 
 model Category {
   id         Int       @id @default(autoincrement())
-  name       String
+  name       String    @unique
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
   products   Product[]
@@ -43,12 +43,12 @@ model Product {
   status         String         @default("new") @db.VarChar(20)
   created_at     DateTime       @default(now())
   updated_at     DateTime       @updatedAt
-  product_images  ProductImage[]
+  product_images ProductImage[]
 }
 
 model ProductImage {
   id         Int      @id @default(autoincrement())
-  product_id Int      
+  product_id Int
   product    Product  @relation(fields: [product_id], references: [id])
   name       String
   size       Int

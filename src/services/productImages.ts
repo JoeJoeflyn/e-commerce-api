@@ -26,7 +26,7 @@ export const addImageProduct = async (
   const promises = [];
 
   for (let i = 0; i < images.length; i++) {
-    const uploadedImages = await cloudinary.uploader.upload(images[i].path, {
+    const uploadedImages = cloudinary.uploader.upload(images[i].path, {
       public_id: path.parse(images[i].originalname).name,
       resource_type: "image",
     });

@@ -9,11 +9,11 @@ export const productRouter = express.Router();
 
 productRouter.post("/", async (req: express.Request, res: express.Response) => {
   const schema = Joi.object({
-    category_id: Joi.number().required(),
+    categoryId: Joi.number().required(),
     name: Joi.string().required(),
     description: Joi.string().required(),
     price: Joi.number().required(),
-    discount_price: Joi.number().required(),
+    discountPrice: Joi.number().required(),
     quantity: Joi.number().required(),
     contact: Joi.string().required(),
     location: Joi.string().required(),
@@ -25,8 +25,7 @@ productRouter.post("/", async (req: express.Request, res: express.Response) => {
   }
 
   try {
-    const product = req.body;
-    const newProduct = await ProductService.addProduct(product);
+    const newProduct = await ProductService.addProduct(req.body);
     return res.status(201).json(newProduct);
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || "Server error" });
@@ -43,7 +42,7 @@ productRouter.post(
 
     try {
       const images = req.files as Express.Multer.File[];
-      const productId = parseInt(req.body?.productId);
+      const productId = +req.body?.productId;
       const newImage = await ImageService.addImageProduct(images, productId);
       return res.status(201).json(newImage);
     } catch (error: any) {
@@ -64,7 +63,7 @@ productRouter.get("/", async (req: express.Request, res: express.Response) => {
 productRouter.get(
   "/:id",
   async (req: express.Request, res: express.Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = +req.params.id;
     try {
       const product = await ProductService.getProduct(id);
       return res.status(200).json(product);
@@ -77,14 +76,14 @@ productRouter.get(
 productRouter.put(
   "/:id",
   async (req: express.Request, res: express.Response) => {
-    const id: number = parseInt(req.params.id, 10);
+    const id: number = +req.params.id;
 
     const schema = Joi.object({
-      category_id: Joi.number(),
+      categoryId: Joi.number(),
       name: Joi.string(),
       description: Joi.string(),
       price: Joi.number(),
-      discount_price: Joi.number(),
+      discountPrice: Joi.number(),
       quantity: Joi.number(),
       contact: Joi.string(),
       location: Joi.string(),
@@ -96,8 +95,7 @@ productRouter.put(
     }
 
     try {
-      const product = req.body;
-      const updateProduct = await ProductService.updateProduct(product, id);
+      const updateProduct = await ProductService.updateProduct(req.body, id);
       return res.status(201).json(updateProduct);
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || "Server error" });

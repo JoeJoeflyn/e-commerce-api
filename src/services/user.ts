@@ -26,10 +26,10 @@ export const listUser = async (
     limit: string;
   };
 
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const offset = (+page - 1) * +limit;
 
   const users = await db.user.findMany({
-    take: parseInt(limit),
+    take: +limit,
     skip: offset,
     select: {
       name: true,

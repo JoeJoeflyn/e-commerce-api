@@ -17,7 +17,7 @@ userRouter.get("/", async (req: express.Request, res: express.Response) => {
 
 // GET a user by ID
 userRouter.get("/:id", async (req: express.Request, res: express.Response) => {
-  const id: number = parseInt(req.params.id, 10);
+  const id: number = +req.params.id;
 
   try {
     const user = await UserService.getUser(id);
@@ -76,8 +76,7 @@ userRouter.post(
     }
 
     try {
-      const user = req.body;
-      const newUser = await UserService.createUser(user);
+      const newUser = await UserService.createUser(req.body);
       return res.status(201).json(newUser);
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || "Server error" });
@@ -87,7 +86,7 @@ userRouter.post(
 
 // UPDATE a user
 userRouter.put("/:id", async (req: express.Request, res: express.Response) => {
-  const id: number = parseInt(req.params.id, 10);
+  const id: number = +req.params.id;
 
   const schema = Joi.object({
     name: Joi.string(),
@@ -102,8 +101,7 @@ userRouter.put("/:id", async (req: express.Request, res: express.Response) => {
   }
 
   try {
-    const user = req.body;
-    const updateUser = await UserService.updateUser(user, id);
+    const updateUser = await UserService.updateUser(req.body, id);
     return res.status(201).json(updateUser);
   } catch (error: any) {
     return res.status(500).json({ error: error?.message || "Server error" });

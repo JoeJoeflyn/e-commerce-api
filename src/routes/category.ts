@@ -18,8 +18,7 @@ categoryRouter.post(
     }
 
     try {
-      const cate = req.body;
-      const newCategory = await CategoryService.addCategory(cate);
+      const newCategory = await CategoryService.addCategory(req.body);
       return res.status(201).json(newCategory);
     } catch (error: any) {
       return res.status(500).json({ error: error?.message || "Server error" });
