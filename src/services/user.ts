@@ -1,6 +1,7 @@
 import express from "express";
 import { db } from "../utils/db.server";
 import { sign, verify } from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 export const createTokens = (email: string) => {
   const accessToken = sign({ email: email }, process.env.SECRET_KEY as string);
@@ -14,21 +15,21 @@ type User = {
   password: string;
 };
 
-export const listUsers = async (
+export const listUser = async (
   req: express.Request
 ): Promise<{
-  users: User[];
   total: number;
+  users: User[];
 }> => {
   const { page, limit } = req.query as {
     page: string;
     limit: string;
   };
 
-  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const offset = (+page - 1) * +limit;
 
-  const users = await db.users.findMany({
-    take: parseInt(limit),
+  const users = await db.user.findMany({
+    take: +limit,
     skip: offset,
     select: {
       name: true,
@@ -37,8 +38,10 @@ export const listUsers = async (
     },
   });
 
+  const total = await db.user.count();
+
   return {
-    total: users.length,
+    total,
     users,
   };
 };
@@ -46,7 +49,7 @@ export const listUsers = async (
 export const getUser = async (
   id: number
 ): Promise<{ name: string; email: string } | null> => {
-  return db.users.findUnique({
+  return db.user.findUnique({
     where: {
       id,
     },
@@ -64,7 +67,7 @@ export const login = async ({
   email: string;
   password: string;
 }): Promise<{ user: User; token: string }> => {
-  const user = await db.users.findFirst({
+  const user = await db.user.findFirst({
     where: {
       email,
     },
@@ -74,7 +77,8 @@ export const login = async ({
     throw new Error("User does not exist");
   }
 
-  const isMatch = await Bun.password.verify(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password);
+
   if (!isMatch) {
     throw new Error("Password does not correct");
   }
@@ -87,13 +91,15 @@ export const login = async ({
   };
 };
 
-export const createUser = async (user: Omit<User, "id">): Promise<User> => {
+export const createUser = async (
+  user: Omit<User, "id">
+): Promise<{ newUser: { name: string; email: string } }> => {
   // hash pass
-  user.password = await Bun.password.hash(user.password);
+  user.password = await bcrypt.hash(user.password, 10);
 
   const { name, email, password } = user;
 
-  const isEmailExist = await db.users.findFirst({
+  const isEmailExist = await db.user.findFirst({
     where: {
       email,
     },
@@ -103,19 +109,20 @@ export const createUser = async (user: Omit<User, "id">): Promise<User> => {
     throw new Error(`User with email ${email} existed`);
   }
 
-  return db.users.create({
+  const newUser = await db.user.create({
     data: {
       name,
       email,
       password,
     },
     select: {
-      id: true,
       name: true,
       email: true,
-      password: true,
     },
   });
+  return {
+    newUser,
+  };
 };
 
 export const updateUser = async (
@@ -124,7 +131,7 @@ export const updateUser = async (
 ): Promise<User> => {
   const { name, email, password } = user;
 
-  const isEmailExist = await db.users.findFirst({
+  const isEmailExist = await db.user.findFirst({
     where: {
       email,
     },
@@ -134,7 +141,7 @@ export const updateUser = async (
     throw new Error("Email must be unique");
   }
 
-  return db.users.update({
+  return db.user.update({
     where: {
       id,
     },
@@ -153,7 +160,7 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (id: number): Promise<void> => {
-  await db.users.delete({
+  await db.user.delete({
     where: {
       id,
     },
