@@ -5,24 +5,25 @@ import * as AdminService from "../services/admin";
 
 export const adminRouter = express.Router();
 
+export const checkAdmin = async function (
+  req: express.Request,
+  res: express.Response,
+  next: NextFunction
+) {
+  try {
+    const adminExis = await AdminService.checkAdmin(req.body.email);
+
+    if (!adminExis) {
+      throw new Error("Usual user will not be allowed to log in");
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({ error: error?.message || "Server error" });
+  }
+};
+
 adminRouter.post(
   "/login",
-  async function (
-    req: express.Request,
-    res: express.Response,
-    next: NextFunction
-  ) {
-    try {
-      const adminExis = await AdminService.checkAdmin(req.body.email);
-
-      if (!adminExis) {
-        throw new Error("Usual user will not be allowed to log in");
-      }
-      next();
-    } catch (error) {
-      return res.status(500).json({ error: error?.message || "Server error" });
-    }
-  },
   async (req: express.Request, res: express.Response) => {
     try {
       const schema = Joi.object({
