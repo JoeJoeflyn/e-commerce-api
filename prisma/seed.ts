@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.admin.create({
     data: {
-      name: "superadmin",
-      email: "thaitainguyen336@gmail.com",
-      password: await bcrypt.hash("theeasiestpasswordyouwillneverknow", 10),
+      name: process.env.ADMIN_NAME as string,
+      email: process.env.ADMIN_EMAIL as string,
+      password: await bcrypt.hash(process.env.ADMIN_PASSWORD as string, 10),
     },
   });
 }
