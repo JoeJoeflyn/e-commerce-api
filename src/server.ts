@@ -2,6 +2,7 @@ import express from "express";
 import * as dotenv from "dotenv";
 import cors from "cors";
 
+import { adminRouter, checkAdmin } from "./routes/admin";
 import { userRouter } from "./routes/user";
 import { productRouter } from "./routes/product";
 import { categoryRouter } from "./routes/category";
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/admin", checkAdmin, adminRouter);
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
