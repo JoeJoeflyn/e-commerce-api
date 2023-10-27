@@ -29,7 +29,7 @@
   },
   "scripts": {
     "build": "tsc --build --clean && tsc",
-    "start": "yarn lint && yarn build && node dist/index.js",
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.ts --watch"
   }
 }
