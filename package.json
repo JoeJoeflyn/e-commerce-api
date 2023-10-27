@@ -30,6 +30,8 @@
   "scripts": {
     "build": "tsc --build --clean && tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts --watch"
+    "dev": "nodemon src/server.ts --watch",
+    "migrate": "prisma migrate dev",
+    "seed": "prisma db seed"
   }
 }
