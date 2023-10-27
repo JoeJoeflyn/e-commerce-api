@@ -20,9 +20,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/api", (req, res) => {
-  res.json({ message: "E Commerce API" });
-});
+
 app.use("/api/admin", checkAdmin, adminRouter);
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
