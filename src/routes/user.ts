@@ -5,16 +5,6 @@ import * as UserService from "../services/user";
 
 export const userRouter = express.Router();
 
-// GET users list
-userRouter.get("/", async (req: express.Request, res: express.Response) => {
-  try {
-    const users = await UserService.listUser(req);
-    return res.status(200).json(users);
-  } catch (error: any) {
-    return res.status(500).json(error.message);
-  }
-});
-
 // GET a user by ID
 userRouter.get("/:id", async (req: express.Request, res: express.Response) => {
   const id: number = +req.params.id;

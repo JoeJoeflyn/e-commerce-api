@@ -15,37 +15,6 @@ type User = {
   password: string;
 };
 
-export const listUser = async (
-  req: express.Request
-): Promise<{
-  total: number;
-  users: User[];
-}> => {
-  const { page, limit } = req.query as {
-    page: string;
-    limit: string;
-  };
-
-  const offset = (+page - 1) * +limit;
-
-  const users = await db.user.findMany({
-    take: +limit,
-    skip: offset,
-    select: {
-      name: true,
-      email: true,
-      password: true,
-    },
-  });
-
-  const total = await db.user.count();
-
-  return {
-    total,
-    users,
-  };
-};
-
 export const getUser = async (
   id: number
 ): Promise<{ name: string; email: string } | null> => {

@@ -11,9 +11,9 @@ export const checkAdmin = async function (
   next: NextFunction
 ) {
   try {
-    const adminExis = await AdminService.checkAdmin(req.body.email);
+    const adminExist = await AdminService.checkAdmin(req.body.email);
 
-    if (!adminExis) {
+    if (!adminExist) {
       throw new Error("Usual user will not be allowed to log in");
     }
     next();
@@ -70,6 +70,19 @@ adminRouter.post(
       return res.status(201).json(newAdmin);
     } catch (error) {
       return res.status(500).json({ error: error?.message || "Server error" });
+    }
+  }
+);
+
+// GET users list
+adminRouter.get(
+  "/users",
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const users = await AdminService.getUsers(req);
+      return res.status(200).json(users);
+    } catch (error: any) {
+      return res.status(500).json(error.message);
     }
   }
 );

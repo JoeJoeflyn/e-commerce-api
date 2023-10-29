@@ -2,11 +2,19 @@ import express from "express";
 import { db } from "../utils/db.server";
 import { sign, verify } from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client";
+import { DefaultArgs } from "@prisma/client/runtime/library";
 
 export const createTokens = (email: string) => {
   const accessToken = sign({ email: email }, process.env.SECRET_KEY as string);
 
   return accessToken;
+};
+
+type User = {
+  name: string;
+  email: string;
+  password: string;
 };
 
 type Admin = {
@@ -83,5 +91,83 @@ export const createAdmin = async (
   });
   return {
     newAdmin,
+  };
+};
+
+export const getUsers = async (
+  req: express.Request
+): Promise<{
+  total: number;
+  users: User[];
+}> => {
+  const { page, limit, search } = req.query as {
+    page: string;
+    limit: string;
+    search: string;
+  };
+
+  const offset = (+page - 1) * +limit;
+
+  let objectQuery: {
+    select?: Prisma.UserSelect<DefaultArgs>;
+    where?: Prisma.UserWhereInput;
+    take?: number;
+    skip?: number;
+  } = {
+    take: +limit,
+    skip: offset,
+    select: {
+      name: true,
+      email: true,
+      password: true,
+    },
+  };
+
+  if (search) {
+    objectQuery = {
+      ...objectQuery,
+      where: {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            email: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+    };
+  }
+
+  const users = await db.user.findMany(objectQuery);
+
+  const total = await db.user.count({
+    where: {
+      OR: [
+        {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ],
+    },
+  });
+
+  return {
+    total,
+    users,
   };
 };
